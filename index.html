@@ -431,7 +431,7 @@ function lastDayOfMonth(year, month) {
 }
 function renderCalendar() {
   const dated = DATA.requests.filter(r => r.calendar_year);
-  const undated = DATA.requests.filter(r => !r.calendar_year);
+  const undated = DATA.requests.filter(r => !r.calendar_year && r.effective_status !== 'Done' && r.effective_status !== 'Reject');
 
   const months = {};
   dated.forEach(r => {
