@@ -273,15 +273,20 @@ function renderProduction() {
   const withPlan = reqs.filter(r=>r.plan_parsed).sort((a,b)=> a.plan_parsed.localeCompare(b.plan_parsed));
   const noPlan = reqs.filter(r=>!r.plan_parsed);
 
-  // skin demand summary (open requests only)
-  const skinTotals = {};
+  // skin demand summary (open requests only), with per-model breakdown
+  const skinData = {};
+  function addSkin(skin, qty, modelName) {
+    if (!skin || !qty) return;
+    if (!skinData[skin]) skinData[skin] = { total: 0, byModel: {} };
+    skinData[skin].total += qty;
+    skinData[skin].byModel[modelName] = (skinData[skin].byModel[modelName] || 0) + qty;
+  }
   reqs.forEach(r => {
-    const q = parseFloat(r.qty1) || 0;
-    if (r.skin1) skinTotals[r.skin1] = (skinTotals[r.skin1]||0) + q;
-    const q2 = parseFloat(r.qty2) || 0;
-    if (r.skin2) skinTotals[r.skin2] = (skinTotals[r.skin2]||0) + q2;
+    const modelName = r.model || r.others || '(ไม่ระบุ)';
+    addSkin(r.skin1, parseFloat(r.qty1) || 0, modelName);
+    addSkin(r.skin2, parseFloat(r.qty2) || 0, modelName);
   });
-  const skinRows = Object.entries(skinTotals).sort((a,b)=>b[1]-a[1]);
+  const skinRows = Object.entries(skinData).sort((a,b)=>b[1].total-a[1].total);
 
   let html = '<div class="card"><h2>คิวงานเรียงตาม Plan สินค้าเข้า (ใกล้สุดก่อน)</h2>';
   html += reqTable(withPlan);
@@ -293,11 +298,18 @@ function renderProduction() {
   html += '</div>';
 
   html += '<div class="card"><h2>สรุปความต้องการหนัง (Skin) รวม — จากคำขอที่ยังไม่เสร็จ</h2>';
-  html += '<div class="table-scroll"><table><thead><tr><th>ประเภทหนัง</th><th>จำนวนที่ขอรวม (ใบ/ชิ้น)</th></tr></thead><tbody>';
-  skinRows.forEach(([skin, qty]) => {
-    html += '<tr><td>' + skin + '</td><td>' + qty + '</td></tr>';
+  html += '<p class="small">คลิกแต่ละหนังเพื่อดูรายละเอียดตามรุ่น</p>';
+  skinRows.forEach(([skin, d]) => {
+    const models = Object.entries(d.byModel).sort((a,b)=>b[1]-a[1]);
+    html += '<details class="skin-block">';
+    html += '<summary class="skin-title"><span class="skin-name"><span class="chev">&#9656;</span>' + skin + '</span><span>' + d.total + ' ชิ้น</span></summary>';
+    html += '<div class="skin-colors">';
+    models.forEach(([modelName, qty]) => {
+      html += '<div class="color-row"><span class="color-chip">' + modelName + '</span><span class="qty">' + qty + ' ชิ้น</span></div>';
+    });
+    html += '</div></details>';
   });
-  html += '</tbody></table></div></div>';
+  html += '</div>';
 
   document.getElementById('production').innerHTML = html;
 }
