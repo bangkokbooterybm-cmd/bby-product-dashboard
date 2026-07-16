@@ -68,7 +68,11 @@
   .b-new { background: none; color: var(--sub); font-weight:500; padding-left:0; }
   .b-overdue { background: var(--redbg); color: var(--red); }
   .b-stale { background: var(--amberbg); color: var(--amber); }
-  .filters { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .filters-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:0; }
+  .status-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--sub); }
+  .legend-item { display:flex; align-items:center; gap:5px; }
+  .legend-dot { width:11px; height:11px; border-radius:3px; display:inline-block; }
   .filter-btn {
     border:1px solid var(--line); background:#fff; border-radius:20px; padding:5px 14px;
     font-size:12.5px; cursor:pointer; font-family:inherit; color: var(--ink);
@@ -189,10 +193,18 @@ function renderOverview() {
   html += '</div>';
 
   html += '<div class="card"><h2>รายการคำขอทั้งหมด</h2>';
+  html += '<div class="filters-row">';
   html += '<div class="filters" id="statusFilters">' +
     filterBtn('all','ทั้งหมด',true) + filterBtn('new','ใหม่/รอตอบรับ') +
     filterBtn('process','กำลังผลิต') + filterBtn('done','เสร็จแล้ว') +
     filterBtn('flag','มีปัญหา (เลยกำหนด/ค้างนาน)') + '</div>';
+  html += '<div class="status-legend">' +
+    '<span class="legend-item"><span class="legend-dot" style="background:#a8e3bd"></span>เขียว = เสร็จแล้ว</span>' +
+    '<span class="legend-item"><span class="legend-dot" style="background:var(--amberbg)"></span>เหลือง = กำลังผลิต</span>' +
+    '<span class="legend-item"><span class="legend-dot" style="background:#f0a3a3"></span>แดง = ถูก Reject</span>' +
+    '<span class="legend-item"><span class="legend-dot" style="background:#fff;border:1px solid var(--line)"></span>ไม่มีสี = ใหม่/รอตอบรับ</span>' +
+    '</div>';
+  html += '</div>';
   html += '<div id="reqTableWrap">' + reqTable(reqs) + '</div>';
   html += '</div>';
 
