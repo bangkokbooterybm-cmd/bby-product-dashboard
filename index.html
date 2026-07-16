@@ -363,22 +363,22 @@ function skinDetails(s) {
   return h;
 }
 const LEATHER_CATS = [
-  { label: 'จระเข้ (Crocodile)', test: s => /crocodile|siamese/i.test(s) },
-  { label: 'นกกระจอกเทศ (Ostrich)', test: s => /ostrich|orstich|ostich/i.test(s) },
-  { label: 'งูหลาม (Python)', test: s => /python/i.test(s) },
-  { label: 'ปลากระเบน (Stingray)', test: s => /stingray/i.test(s) },
-  { label: 'งูทะเล (Sea Snake)', test: s => /sea\s*snake/i.test(s) },
-  { label: 'หนังแกะ (Lamb)', test: s => /lamb/i.test(s) },
-  { label: 'งูเห่า (Cobra)', test: s => /cobra/i.test(s) },
-  { label: 'งูน้ำ (Water Snake)', test: s => /water\s*snake/i.test(s) },
-  { label: 'เคแมน (Caiman)', test: s => /caiman/i.test(s) },
-  { label: 'หนังทั่วไป (Leather)', test: s => /^leather$|normal\s*skin/i.test(s) },
+  { label: 'Crocodile', test: s => /crocodile|siamese/i.test(s) },
+  { label: 'Ostrich', test: s => /ostrich|orstich|ostich/i.test(s) },
+  { label: 'Python', test: s => /python/i.test(s) },
+  { label: 'Stingray', test: s => /stingray/i.test(s) },
+  { label: 'Sea Snake', test: s => /sea\s*snake/i.test(s) },
+  { label: 'Lamb', test: s => /lamb/i.test(s) },
+  { label: 'Cobra', test: s => /cobra/i.test(s) },
+  { label: 'Water Snake', test: s => /water\s*snake/i.test(s) },
+  { label: 'Caiman', test: s => /caiman/i.test(s) },
+  { label: 'Leather', test: s => /^leather$|normal\s*skin/i.test(s) },
 ];
 function categorizeSkin(name) {
   for (const cat of LEATHER_CATS) {
     if (cat.test(name)) return cat.label;
   }
-  return 'อื่นๆ (Other)';
+  return 'Other';
 }
 function leatherGroup(catLabel, skins) {
   const qty = skins.reduce((sum, s) => sum + (s.qty||0), 0);
@@ -398,7 +398,7 @@ function modelDetails(mo) {
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(s);
   });
-  const order = LEATHER_CATS.map(c => c.label).concat(['อื่นๆ (Other)']);
+  const order = LEATHER_CATS.map(c => c.label).concat(['Other']);
   let body = '';
   order.forEach(catLabel => {
     if (groups[catLabel] && groups[catLabel].length) {
