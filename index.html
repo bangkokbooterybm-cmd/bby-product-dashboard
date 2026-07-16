@@ -259,8 +259,13 @@ function rowClass(r) {
   if (r.effective_status.indexOf('ON PROCESS') === 0) return 'row-process';
   return '';
 }
-function reqTable(reqs) {
-  let rows = reqs.slice().sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+function reqTable(reqs, sortBy) {
+  let rows = reqs.slice();
+  if (sortBy === 'plan') {
+    rows.sort((a,b) => (a.plan_parsed||'9999').localeCompare(b.plan_parsed||'9999'));
+  } else {
+    rows.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
+  }
   let html = '<div class="table-scroll"><table><thead><tr><th>วันที่แจ้ง</th><th>รุ่น</th><th>หนัง/สี</th><th>จำนวน</th>' +
     '<th>ผู้แจ้ง</th><th>สถานะ</th><th>Plan เข้า</th><th>หมายเหตุ</th></tr></thead><tbody>';
   rows.forEach(r => {
@@ -279,38 +284,29 @@ function reqTable(reqs) {
 }
 
 // ---------- Production ----------
+function collapseBox(title, reqs, note, sortBy) {
+  let h = '<details class="card-collapse"><summary class="card-collapse-title"><span class="chev">&#9656;</span>' +
+    title + ' (' + reqs.length + ')</summary>';
+  h += '<div class="card-collapse-body">';
+  if (note) h += '<p class="small">' + note + '</p>';
+  h += reqs.length ? reqTable(reqs, sortBy) : '<p class="small">ไม่มีรายการ</p>';
+  h += '</div></details>';
+  return h;
+}
 function renderProduction() {
   const reqs = DATA.requests;
   const proposed = reqs.filter(r => r.effective_status === 'New / รอพิจารณา');
   const processNoPlan = reqs.filter(r => r.effective_status === 'ON PROCESS' && !r.plan_raw);
-  const processWithPlan = reqs.filter(r => r.effective_status === 'ON PROCESS' && r.plan_raw)
-    .sort((a,b) => (a.plan_parsed||'9999').localeCompare(b.plan_parsed||'9999'));
+  const processWithPlan = reqs.filter(r => r.effective_status === 'ON PROCESS' && r.plan_raw);
   const doneReqs = reqs.filter(r => r.effective_status === 'Done');
   const rejectReqs = reqs.filter(r => r.effective_status === 'Reject');
 
   let html = '';
-
-  html += '<div class="card"><h2>เสนอขอที่ยังไม่ดำเนินการ (' + proposed.length + ')</h2>';
-  html += '<p class="small">รายการที่ยังไม่มี Reply, Status หรือ Plan เลย — รอการพิจารณา</p>';
-  html += proposed.length ? reqTable(proposed) : '<p class="small">ไม่มีรายการ</p>';
-  html += '</div>';
-
-  html += '<div class="card"><h2>ON PROCESS ที่ยังไม่มีกำหนดวันเข้า (' + processNoPlan.length + ')</h2>';
-  html += '<p class="small">กำลังผลิตอยู่ แต่ยังไม่มีวันที่คาดว่าสินค้าจะเข้า ต้องติดตามเป็นพิเศษ</p>';
-  html += processNoPlan.length ? reqTable(processNoPlan) : '<p class="small">ไม่มีรายการ</p>';
-  html += '</div>';
-
-  html += '<div class="card"><h2>ON PROCESS เรียงตามกำหนดวันเข้าใกล้สุดก่อน (' + processWithPlan.length + ')</h2>';
-  html += processWithPlan.length ? reqTable(processWithPlan) : '<p class="small">ไม่มีรายการ</p>';
-  html += '</div>';
-
-  html += '<details class="card-collapse"><summary class="card-collapse-title"><span class="chev">&#9656;</span>เสร็จแล้ว (Done) — ' + doneReqs.length + ' รายการ</summary>';
-  html += '<div class="card-collapse-body">' + (doneReqs.length ? reqTable(doneReqs) : '<p class="small">ไม่มีรายการ</p>') + '</div>';
-  html += '</details>';
-
-  html += '<details class="card-collapse"><summary class="card-collapse-title"><span class="chev">&#9656;</span>Reject — ' + rejectReqs.length + ' รายการ</summary>';
-  html += '<div class="card-collapse-body">' + (rejectReqs.length ? reqTable(rejectReqs) : '<p class="small">ไม่มีรายการ</p>') + '</div>';
-  html += '</details>';
+  html += collapseBox('เสนอขอที่ยังไม่ดำเนินการ', proposed, 'รายการที่ยังไม่มี Reply, Status หรือ Plan เลย — รอการพิจารณา');
+  html += collapseBox('ON PROCESS ที่ยังไม่มีกำหนดวันเข้า', processNoPlan, 'กำลังผลิตอยู่ แต่ยังไม่มีวันที่คาดว่าสินค้าจะเข้า ต้องติดตามเป็นพิเศษ');
+  html += collapseBox('ON PROCESS เรียงตามกำหนดวันเข้าใกล้สุดก่อน', processWithPlan, null, 'plan');
+  html += collapseBox('เสร็จแล้ว (Done)', doneReqs);
+  html += collapseBox('Reject', rejectReqs);
 
   document.getElementById('production').innerHTML = html;
 }
