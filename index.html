@@ -566,6 +566,15 @@ function renderCalendar() {
   document.getElementById('calendar').innerHTML = html;
 }
 
+(function computeFlags() {
+  const today = new Date().toISOString().slice(0,10);
+  DATA.requests.forEach(r => {
+    const isOpen = r.effective_status !== 'Done' && r.effective_status !== 'Reject';
+    r.overdue = !!(isOpen && r.plan_parsed && r.plan_parsed < today);
+    r.stale = !!(r.effective_status.indexOf('ON PROCESS') === 0 && !r.plan_raw && (r.age_days||0) > 14);
+  });
+})();
+
 renderOverview();
 renderProduction();
 renderSales();
