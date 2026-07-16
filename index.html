@@ -568,7 +568,12 @@ function renderCalendar() {
 
 (function computeFlags() {
   const today = new Date().toISOString().slice(0,10);
+  const todayMs = new Date(today + 'T00:00:00Z').getTime();
   DATA.requests.forEach(r => {
+    if (r.timestamp) {
+      const tsMs = new Date(r.timestamp + 'T00:00:00Z').getTime();
+      r.age_days = Math.max(0, Math.round((todayMs - tsMs) / 86400000));
+    }
     const isOpen = r.effective_status !== 'Done' && r.effective_status !== 'Reject';
     r.overdue = !!(isOpen && r.plan_parsed && r.plan_parsed < today);
     r.stale = !!(r.effective_status.indexOf('ON PROCESS') === 0 && !r.plan_raw && (r.age_days||0) > 14);
