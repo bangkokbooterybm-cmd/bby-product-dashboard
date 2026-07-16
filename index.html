@@ -388,6 +388,26 @@ function leatherGroup(catLabel, skins) {
   h += '</details>';
   return h;
 }
+function mergePythonGrades(skins) {
+  const merged = {};
+  skins.forEach(s => {
+    const trimmed = (s.skin||'').trim();
+    const hasSuffix = /\s+[RM]$/i.test(trimmed);
+    const base = trimmed.replace(/\s+[RM]$/i, '').replace(/\s+/g, ' ').trim();
+    if (!merged[base]) merged[base] = { base: base, qty: 0, colorMap: {}, hasSuffix: false };
+    merged[base].qty += s.qty || 0;
+    if (hasSuffix) merged[base].hasSuffix = true;
+    (s.colors||[]).forEach(c => {
+      if (!merged[base].colorMap[c.name]) merged[base].colorMap[c.name] = 0;
+      merged[base].colorMap[c.name] += c.qty || 0;
+    });
+  });
+  return Object.values(merged).map(m => ({
+    skin: m.hasSuffix ? (m.base + ' R+M') : m.base,
+    qty: m.qty,
+    colors: Object.entries(m.colorMap).map(([name, qty]) => ({name: name, qty: qty})).sort((a,b)=>b.qty-a.qty)
+  })).sort((a,b)=>b.qty-a.qty);
+}
 function modelDetails(mo) {
   const label = mo.model + (mo.size && mo.size !== 'ไม่ระบุ' ? ' #' + mo.size : '');
   let h = '<details class="model-block">';
@@ -398,6 +418,9 @@ function modelDetails(mo) {
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(s);
   });
+  if (groups['Python']) {
+    groups['Python'] = mergePythonGrades(groups['Python']);
+  }
   const order = LEATHER_CATS.map(c => c.label).concat(['Other']);
   let body = '';
   order.forEach(catLabel => {
