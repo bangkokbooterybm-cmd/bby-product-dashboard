@@ -54,6 +54,7 @@
   th { text-align: left; padding: 8px 10px; color: var(--sub); font-weight: 600;
        border-bottom: 1px solid var(--line); white-space: nowrap; }
   td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .date-cell { white-space: nowrap; }
   tr:hover td { background: #fbf9f6; }
   tr.row-done td { background: #a8e3bd; }
   tr.row-process td { background: var(--amberbg); }
@@ -237,6 +238,12 @@ function kpi(num, label, cls) {
 function filterBtn(f, label, active) {
   return '<button class="filter-btn' + (active?' active':'') + '" data-f="' + f + '">' + label + '</button>';
 }
+function fmtDate(iso) {
+  if (!iso) return '-';
+  const p = iso.split('-');
+  if (p.length !== 3) return iso;
+  return p[2] + '-' + p[1] + '-' + p[0];
+}
 function rowClass(r) {
   if (r.effective_status === 'Done') return 'row-done';
   if (r.effective_status === 'Reject') return 'row-reject';
@@ -248,7 +255,7 @@ function reqTable(reqs) {
   let html = '<div class="table-scroll"><table><thead><tr><th>วันที่แจ้ง</th><th>รุ่น</th><th>หนัง/สี</th><th>จำนวน</th>' +
     '<th>ผู้แจ้ง</th><th>สถานะ</th><th>Plan เข้า</th><th>หมายเหตุ</th></tr></thead><tbody>';
   rows.forEach(r => {
-    html += '<tr class="' + rowClass(r) + '"><td>' + (r.timestamp||'-') + '<div class="small">' + (r.age_days!=null?r.age_days+' วันที่แล้ว':'') + '</div></td>' +
+    html += '<tr class="' + rowClass(r) + '"><td class="date-cell">' + fmtDate(r.timestamp) + '<div class="small">' + (r.age_days!=null?r.age_days+' วันที่แล้ว':'') + '</div></td>' +
       '<td>' + (r.model || '<i>'+(r.others||'(ไม่ระบุ)')+'</i>') + '<div class="small">' + (r.size?'size '+r.size:'') + '</div></td>' +
       '<td>' + r.skin1 + (r.color? ' — '+r.color : '') + (r.skin2? '<div class="small">skin2: '+r.skin2+'</div>':'') + '</td>' +
       '<td>' + (r.qty1||'-') + (r.qty2? ' / '+r.qty2 : '') + '</td>' +
