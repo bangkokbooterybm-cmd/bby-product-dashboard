@@ -116,6 +116,15 @@
   .model-block[open] > .model-sub-title .chev { transform: rotate(90deg); }
   .model-sub-body { margin-top:4px; padding-left:18px; }
 
+  .leather-block { padding:6px 0; border-bottom:1px solid var(--line); }
+  .leather-block summary { list-style:none; cursor:pointer; }
+  .leather-block summary::-webkit-details-marker { display:none; }
+  .leather-title { display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700; color:var(--accent2); }
+  .leather-title .chev { color:var(--sub); font-size:12px; margin-right:8px; transition:transform .15s; display:inline-block; }
+  .leather-block[open] > .leather-title .chev { transform: rotate(90deg); }
+  .leather-title .skin-name { display:flex; align-items:center; }
+  .leather-body { margin-top:4px; padding-left:16px; }
+
   .skin-block { padding:6px 0; border-bottom:1px dashed var(--line); }
   .skin-block summary { list-style:none; cursor:pointer; }
   .skin-block summary::-webkit-details-marker { display:none; }
@@ -353,11 +362,50 @@ function skinDetails(s) {
   h += '</details>';
   return h;
 }
+const LEATHER_CATS = [
+  { label: 'จระเข้ (Crocodile)', test: s => /crocodile|siamese/i.test(s) },
+  { label: 'นกกระจอกเทศ (Ostrich)', test: s => /ostrich|orstich|ostich/i.test(s) },
+  { label: 'งูหลาม (Python)', test: s => /python/i.test(s) },
+  { label: 'ปลากระเบน (Stingray)', test: s => /stingray/i.test(s) },
+  { label: 'งูทะเล (Sea Snake)', test: s => /sea\s*snake/i.test(s) },
+  { label: 'หนังแกะ (Lamb)', test: s => /lamb/i.test(s) },
+  { label: 'งูเห่า (Cobra)', test: s => /cobra/i.test(s) },
+  { label: 'งูน้ำ (Water Snake)', test: s => /water\s*snake/i.test(s) },
+  { label: 'เคแมน (Caiman)', test: s => /caiman/i.test(s) },
+  { label: 'หนังทั่วไป (Leather)', test: s => /^leather$|normal\s*skin/i.test(s) },
+];
+function categorizeSkin(name) {
+  for (const cat of LEATHER_CATS) {
+    if (cat.test(name)) return cat.label;
+  }
+  return 'อื่นๆ (Other)';
+}
+function leatherGroup(catLabel, skins) {
+  const qty = skins.reduce((sum, s) => sum + (s.qty||0), 0);
+  let h = '<details class="leather-block">';
+  h += '<summary class="leather-title"><span class="skin-name"><span class="chev">&#9656;</span>' + catLabel + '</span><span>' + qty + ' ชิ้น</span></summary>';
+  h += '<div class="leather-body">' + skins.map(skinDetails).join('') + '</div>';
+  h += '</details>';
+  return h;
+}
 function modelDetails(mo) {
   const label = mo.model + (mo.size && mo.size !== 'ไม่ระบุ' ? ' #' + mo.size : '');
   let h = '<details class="model-block">';
   h += '<summary class="model-sub-title"><span class="skin-name"><span class="chev">&#9656;</span>' + label + '</span><span>' + mo.qty + ' ชิ้น</span></summary>';
-  h += '<div class="model-sub-body">' + (mo.skins||[]).map(skinDetails).join('') + '</div>';
+  const groups = {};
+  (mo.skins||[]).forEach(s => {
+    const cat = categorizeSkin(s.skin);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(s);
+  });
+  const order = LEATHER_CATS.map(c => c.label).concat(['อื่นๆ (Other)']);
+  let body = '';
+  order.forEach(catLabel => {
+    if (groups[catLabel] && groups[catLabel].length) {
+      body += leatherGroup(catLabel, groups[catLabel]);
+    }
+  });
+  h += '<div class="model-sub-body">' + body + '</div>';
   h += '</details>';
   return h;
 }
