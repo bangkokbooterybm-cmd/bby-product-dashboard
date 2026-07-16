@@ -55,6 +55,9 @@
        border-bottom: 1px solid var(--line); white-space: nowrap; }
   td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
   tr:hover td { background: #fbf9f6; }
+  tr.row-done td { background: var(--greenbg); }
+  tr.row-process td { background: var(--amberbg); }
+  tr.row-reject td { background: var(--redbg); }
   .badge {
     display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11.5px;
     font-weight: 600; white-space: nowrap;
@@ -85,7 +88,7 @@
   .cal-total { display:flex; justify-content:space-between; font-size:12.5px; font-weight:700;
     border-top:1px solid var(--line); margin-top:8px; padding-top:6px; }
   .model-card h3 { margin:0 0 8px; font-size:15px; }
-  .model-grid { display:grid; grid-template-columns: 1.7fr 1fr; gap:20px; margin-top:10px; }
+  .model-grid { display:grid; grid-template-columns: 1fr 1.7fr; gap:20px; margin-top:10px; }
   .model-grid .col-title { font-size:11.5px; color:var(--sub); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; }
   .mini-row { display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; border-bottom:1px dashed var(--line); }
   .model-block { padding:7px 0; border-bottom:1px solid var(--line); }
@@ -214,12 +217,18 @@ function kpi(num, label, cls) {
 function filterBtn(f, label, active) {
   return '<button class="filter-btn' + (active?' active':'') + '" data-f="' + f + '">' + label + '</button>';
 }
+function rowClass(r) {
+  if (r.effective_status === 'Done') return 'row-done';
+  if (r.effective_status === 'Reject') return 'row-reject';
+  if (r.effective_status.indexOf('ON PROCESS') === 0) return 'row-process';
+  return '';
+}
 function reqTable(reqs) {
   let rows = reqs.slice().sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
   let html = '<div class="table-scroll"><table><thead><tr><th>วันที่แจ้ง</th><th>รุ่น</th><th>หนัง/สี</th><th>จำนวน</th>' +
     '<th>ผู้แจ้ง</th><th>สถานะ</th><th>Plan เข้า</th><th>หมายเหตุ</th></tr></thead><tbody>';
   rows.forEach(r => {
-    html += '<tr><td>' + (r.timestamp||'-') + '<div class="small">' + (r.age_days!=null?r.age_days+' วันที่แล้ว':'') + '</div></td>' +
+    html += '<tr class="' + rowClass(r) + '"><td>' + (r.timestamp||'-') + '<div class="small">' + (r.age_days!=null?r.age_days+' วันที่แล้ว':'') + '</div></td>' +
       '<td>' + (r.model || '<i>'+(r.others||'(ไม่ระบุ)')+'</i>') + '<div class="small">' + (r.size?'size '+r.size:'') + '</div></td>' +
       '<td>' + r.skin1 + (r.color? ' — '+r.color : '') + (r.skin2? '<div class="small">skin2: '+r.skin2+'</div>':'') + '</td>' +
       '<td>' + (r.qty1||'-') + (r.qty2? ' / '+r.qty2 : '') + '</td>' +
@@ -329,17 +338,17 @@ function renderSales() {
     html += '<div class="model-card"><h3>' + m + '</h3>';
     html += '<div class="model-grid">';
 
-    html += '<div><div class="col-title">สต็อกคงเหลือปัจจุบัน &mdash; รวม ' + (stock.total_qty!=null?stock.total_qty:'-') + ' ชิ้น</div>';
-    if ((stock.models||[]).length === 0) html += '<div class="small">ไม่มีสต็อกในสาขาที่ดูแล</div>';
-    html += (stock.models || []).map(modelDetails).join('');
-    html += '</div>';
-
     html += '<div><div class="col-title">คำขอที่ยังค้างอยู่ (' + openReqs.length + ')</div>';
     if (openReqs.length === 0) html += '<div class="small">ไม่มีคำขอค้าง</div>';
     openReqs.forEach(r => {
       html += '<div class="mini-row"><span>' + r.skin1 + ' / ' + r.color + ' (' + (r.qty1||'-') + ')</span>' +
         '<span>' + statusBadge(r) + '</span></div>';
     });
+    html += '</div>';
+
+    html += '<div><div class="col-title">สต็อกคงเหลือปัจจุบัน &mdash; รวม ' + (stock.total_qty!=null?stock.total_qty:'-') + ' ชิ้น</div>';
+    if ((stock.models||[]).length === 0) html += '<div class="small">ไม่มีสต็อกในสาขาที่ดูแล</div>';
+    html += (stock.models || []).map(modelDetails).join('');
     html += '</div>';
 
     html += '</div></div>';
