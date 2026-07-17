@@ -81,6 +81,15 @@
   .b-new { background: var(--bluebg); color: var(--blue); }
   .b-overdue { background: var(--redbg); color: var(--red); }
   .b-stale { background: var(--amberbg); color: var(--amber); }
+  .b-urgent { background: var(--red); color: #fff; font-weight:700; }
+  .stock-cell-block { min-width: 140px; }
+  .stock-cell-block summary { list-style:none; cursor:pointer; font-size:12.5px; color:var(--accent); font-weight:600; }
+  .stock-cell-block summary::-webkit-details-marker { display:none; }
+  .stock-cell-block .chev { color:var(--sub); font-size:11px; margin-right:4px; display:inline-block; transition:transform .15s; }
+  .stock-cell-block[open] summary .chev { transform: rotate(90deg); }
+  .stock-cell-body { margin-top:4px; max-width: 260px; }
+  .stock-cell-body .model-block { padding:4px 0; }
+  .stock-cell-body .model-sub-title { font-size:13px; }
   .filters-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
   .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:0; }
   .status-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--sub); }
@@ -271,6 +280,32 @@ function rowClass(r) {
   if (r.effective_status === 'New / รอพิจารณา') return 'row-new';
   return '';
 }
+function reqStockModels(r) {
+  const info = DATA.model_summary[r.model];
+  if (!info || !info.stock || !(info.stock.models||[]).length) return [];
+  let relevant = info.stock.models;
+  if (r.size && r.size !== 'ไม่ระบุ') {
+    const filtered = relevant.filter(m => m.size === r.size);
+    if (filtered.length) relevant = filtered;
+  }
+  return relevant;
+}
+function stockCell(r) {
+  const relevant = reqStockModels(r);
+  if (!relevant.length) return '<span class="small" style="color:var(--sub)">-</span>';
+  const totalQty = relevant.reduce((s,m) => s + (m.qty||0), 0);
+  let h = '<details class="stock-cell-block"><summary><span class="chev">&#9656;</span>' + totalQty + ' ชิ้น</summary>';
+  h += '<div class="stock-cell-body">' + relevant.map(modelDetails).join('') + '</div>';
+  h += '</details>';
+  return h;
+}
+function isUrgent(r) {
+  if (r.effective_status.indexOf('ON PROCESS') !== 0) return false;
+  const relevant = reqStockModels(r);
+  if (!relevant.length) return false;
+  const totalQty = relevant.reduce((s,m) => s + (m.qty||0), 0);
+  return totalQty < 3;
+}
 function reqTable(reqs, sortBy) {
   let rows = reqs.slice();
   if (sortBy === 'plan') {
@@ -279,15 +314,17 @@ function reqTable(reqs, sortBy) {
     rows.sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''));
   }
   let html = '<div class="table-scroll"><table><thead><tr><th>วันที่แจ้ง</th><th>รุ่น</th><th>หนัง/สี</th><th>จำนวน</th>' +
-    '<th>ผู้แจ้ง</th><th>สถานะ</th><th>Plan เข้า</th><th>หมายเหตุ</th></tr></thead><tbody>';
+    '<th>ผู้แจ้ง</th><th>สถานะ</th><th>Plan เข้า</th><th>Stock</th><th>หมายเหตุ</th></tr></thead><tbody>';
   rows.forEach(r => {
+    const urgentBadge = isUrgent(r) ? ' <span class="badge b-urgent">เร่งด่วน</span>' : '';
     html += '<tr class="' + rowClass(r) + '"><td class="date-cell">' + fmtDate(r.timestamp) + '<div class="small">' + (r.age_days!=null?r.age_days+' วันที่แล้ว':'') + '</div></td>' +
-      '<td>' + (r.model || '<i>'+(r.others||'(ไม่ระบุ)')+'</i>') + '<div class="small">' + (r.size?'size '+r.size:'') + '</div></td>' +
+      '<td>' + (r.model || '<i>'+(r.others||'(ไม่ระบุ)')+'</i>') + urgentBadge + '<div class="small">' + (r.size?'size '+r.size:'') + '</div></td>' +
       '<td>' + r.skin1 + (r.color? ' — '+r.color : '') + (r.skin2? '<div class="small">skin2: '+r.skin2+'</div>':'') + '</td>' +
       '<td>' + (r.qty1||'-') + (r.qty2? ' / '+r.qty2 : '') + '</td>' +
       '<td>' + r.requester + '</td>' +
       '<td>' + statusBadge(r) + flagBadges(r) + '</td>' +
       '<td class="plan-cell">' + (r.plan_raw || '-') + '</td>' +
+      '<td>' + stockCell(r) + '</td>' +
       '<td class="small">' + (r.reply || '') + '</td>' +
       '</tr>';
   });
