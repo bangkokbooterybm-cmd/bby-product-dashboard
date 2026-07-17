@@ -299,12 +299,34 @@ function stockCell(r) {
   h += '</details>';
   return h;
 }
+function requestedColorQtys(r) {
+  const relevant = reqStockModels(r);
+  const requestedColors = (r.color||'').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  if (!requestedColors.length || !relevant.length) return [];
+  const reqSkinName = (r.skin1||'').toLowerCase().trim();
+  if (!reqSkinName) return [];
+  return requestedColors.map(rc => {
+    let qty = 0;
+    relevant.forEach(m => {
+      (m.skins||[]).forEach(sk => {
+        const skinName = (sk.skin||'').toLowerCase();
+        if (!skinName.includes(reqSkinName) && !reqSkinName.includes(skinName)) return;
+        (sk.colors||[]).forEach(c => {
+          const cName = (c.name||'').toLowerCase();
+          if (cName === rc || cName.includes(rc) || rc.includes(cName)) {
+            qty += (c.qty||0);
+          }
+        });
+      });
+    });
+    return { color: rc, qty: qty };
+  });
+}
 function isUrgent(r) {
   if (r.effective_status.indexOf('ON PROCESS') !== 0) return false;
-  const relevant = reqStockModels(r);
-  if (!relevant.length) return false;
-  const totalQty = relevant.reduce((s,m) => s + (m.qty||0), 0);
-  return totalQty < 3;
+  const qtys = requestedColorQtys(r);
+  if (!qtys.length) return false;
+  return qtys.some(q => q.qty < 3);
 }
 function reqTable(reqs, sortBy) {
   let rows = reqs.slice();
