@@ -365,8 +365,8 @@ function reqTable(reqs, sortBy) {
 }
 
 // ---------- Production ----------
-function collapseBox(title, reqs, note, sortBy) {
-  let h = '<details class="card-collapse"><summary class="card-collapse-title"><span class="chev">&#9656;</span>' +
+function collapseBox(title, reqs, note, sortBy, defaultOpen) {
+  let h = '<details class="card-collapse"' + (defaultOpen ? ' open' : '') + '><summary class="card-collapse-title"><span class="chev">&#9656;</span>' +
     title + ' (' + reqs.length + ')</summary>';
   h += '<div class="card-collapse-body">';
   if (note) h += '<p class="small">' + note + '</p>';
@@ -383,9 +383,9 @@ function renderProduction() {
   const rejectReqs = reqs.filter(r => r.effective_status === 'Reject');
 
   let html = '';
-  html += collapseBox('เสนอขอที่ยังไม่ดำเนินการ', proposed, 'รายการที่ยังไม่มี Reply, Status หรือ Plan เลย — รอการพิจารณา');
-  html += collapseBox('ON PROCESS ที่ยังไม่มีกำหนดวันเข้า', processNoPlan, 'กำลังผลิตอยู่ แต่ยังไม่มีวันที่คาดว่าสินค้าจะเข้า ต้องติดตามเป็นพิเศษ');
-  html += collapseBox('ON PROCESS เรียงตามกำหนดวันเข้าใกล้สุดก่อน', processWithPlan, null, 'plan');
+  html += collapseBox('เสนอขอที่ยังไม่ดำเนินการ', proposed, 'รายการที่ยังไม่มี Reply, Status หรือ Plan เลย — รอการพิจารณา', null, true);
+  html += collapseBox('ON PROCESS ที่ยังไม่มีกำหนดวันเข้า', processNoPlan, 'กำลังผลิตอยู่ แต่ยังไม่มีวันที่คาดว่าสินค้าจะเข้า ต้องติดตามเป็นพิเศษ', null, true);
+  html += collapseBox('ON PROCESS เรียงตามกำหนดวันเข้าใกล้สุดก่อน', processWithPlan, null, 'plan', true);
   html += collapseBox('เสร็จแล้ว (Done)', doneReqs);
   html += collapseBox('Reject', rejectReqs);
 
