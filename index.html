@@ -77,6 +77,7 @@
     font-weight: 600; white-space: nowrap;
   }
   .b-done { background: var(--greenbg); color: var(--green); }
+  .b-covered { background: var(--greenbg); color: var(--green); }
   .b-process { background: var(--amberbg); color: var(--amber); }
   .b-reject { background: var(--redbg); color: var(--red); }
   .b-new { background: var(--bluebg); color: var(--blue); }
@@ -556,7 +557,7 @@ function bestsellerAlertBlock(m) {
     lowStock.forEach(it => {
       const already = hasOpenRequestFor(m, it.size, it.skin, it.color);
       h += '<div class="bestseller-row">' +
-        '<div class="bestseller-row-label">' + m + ' #' + it.size + ' ' + it.skin + ' / ' + it.color + (already ? ' <span class="badge b-process">มีคำขอค้างอยู่แล้ว</span>' : '') + '</div>' +
+        '<div class="bestseller-row-label">' + m + ' #' + it.size + ' ' + it.skin + ' / ' + it.color + (already ? ' <span class="badge b-covered">มีคำขอค้างอยู่แล้ว</span>' : '') + '</div>' +
         '<div class="bestseller-row-value">เหลือ ' + it.cur_stock + ' ชิ้น (ขาย ' + it.hist_qty + ' ชิ้น/' + it.active_months + ' เดือนที่วางขาย = ' + it.monthly_rate + ' ชิ้น/เดือน) Stock คงเหลือ &asymp; ' + it.months_cover + ' เดือน</div>' +
         '</div>';
     });
