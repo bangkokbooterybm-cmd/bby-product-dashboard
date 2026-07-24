@@ -102,6 +102,8 @@
     font-size:12.5px; cursor:pointer; font-family:inherit; color: var(--ink);
   }
   .filter-btn.active { background: var(--accent); color:#fff; border-color: var(--accent); }
+  .search-input { border:1px solid var(--line); border-radius:20px; padding:6px 14px; font-size:12.5px; font-family:inherit; color:var(--ink); min-width:220px; background:#fff; }
+  .search-input:focus { outline:none; border-color:var(--accent); }
   .model-card { border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px; }
   .cal-month { margin-bottom:26px; }
   .cal-month h3 { font-size:15.5px; color:var(--accent); margin:0 0 10px; }
@@ -244,6 +246,7 @@ function renderOverview() {
     filterBtn('process','กำลังผลิต') + filterBtn('done','เสร็จแล้ว') +
     filterBtn('reject','Reject') +
     filterBtn('flag','มีปัญหา (เลยกำหนด/ค้างนาน)') + '</div>';
+  html += '<input type="text" id="reqSearchBox" class="search-input" placeholder="ค้นหารุ่น หรือ ผู้แจ้ง...">';
   html += '<div class="status-legend">' +
     '<span class="legend-item"><span class="legend-dot" style="background:#a8e3bd"></span>เขียว = เสร็จแล้ว</span>' +
     '<span class="legend-item"><span class="legend-dot" style="background:var(--amberbg)"></span>เหลือง = กำลังผลิต</span>' +
@@ -259,20 +262,36 @@ function renderOverview() {
 
   document.getElementById('overview').innerHTML = html;
 
+  let currentStatusFilter = 'all';
+  function applyFilters() {
+    let filtered = reqs;
+    if (currentStatusFilter === 'new') filtered = filtered.filter(r=>isPlainStatus(r));
+    else if (currentStatusFilter === 'process') filtered = filtered.filter(r=>r.effective_status.indexOf('ON PROCESS')===0);
+    else if (currentStatusFilter === 'done') filtered = filtered.filter(r=>r.effective_status==='Done');
+    else if (currentStatusFilter === 'reject') filtered = filtered.filter(r=>r.effective_status==='Reject');
+    else if (currentStatusFilter === 'flag') filtered = filtered.filter(r=>r.overdue||r.stale);
+    const searchBox = document.getElementById('reqSearchBox');
+    const q = searchBox ? searchBox.value.trim().toLowerCase() : '';
+    if (q) {
+      filtered = filtered.filter(r =>
+        (r.model||'').toLowerCase().indexOf(q) !== -1 ||
+        (r.requester||'').toLowerCase().indexOf(q) !== -1
+      );
+    }
+    document.getElementById('reqTableWrap').innerHTML = reqTable(filtered);
+  }
   document.querySelectorAll('#statusFilters .filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#statusFilters .filter-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      const f = btn.dataset.f;
-      let filtered = reqs;
-      if (f === 'new') filtered = reqs.filter(r=>isPlainStatus(r));
-      else if (f === 'process') filtered = reqs.filter(r=>r.effective_status.indexOf('ON PROCESS')===0);
-      else if (f === 'done') filtered = reqs.filter(r=>r.effective_status==='Done');
-      else if (f === 'reject') filtered = reqs.filter(r=>r.effective_status==='Reject');
-      else if (f === 'flag') filtered = reqs.filter(r=>r.overdue||r.stale);
-      document.getElementById('reqTableWrap').innerHTML = reqTable(filtered);
+      currentStatusFilter = btn.dataset.f;
+      applyFilters();
     });
   });
+  const searchBoxEl = document.getElementById('reqSearchBox');
+  if (searchBoxEl) {
+    searchBoxEl.addEventListener('input', applyFilters);
+  }
 }
 function kpi(num, label, cls) {
   return '<div class="kpi ' + (cls||'') + '"><div class="num">' + num + '</div><div class="label">' + label + '</div></div>';
