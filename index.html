@@ -539,15 +539,30 @@ function skinColorMatch(needleSkin, needleColor, r) {
 function hasOpenRequestFor(model, size, skin, color) {
   return DATA.requests.some(r => r.model === model && String(r.size||'').trim() === String(size||'').trim() && qualifiesOpen(r) && skinColorMatch(skin, color, r));
 }
+function lookupCurStock(model, size, skin, color) {
+  const st = (DATA.model_summary[model] || {}).stock;
+  if (!st) return 0;
+  const mod = (st.models||[]).find(x => String(x.size) === String(size));
+  if (!mod) return 0;
+  const sk = (mod.skins||[]).find(s => s.skin === skin);
+  if (!sk) return 0;
+  const c = (sk.colors||[]).find(cc => cc.name === color);
+  return c ? (c.qty||0) : 0;
+}
 function bestsellerAlertBlock(m) {
   const info = DATA.bestseller_alerts && DATA.bestseller_alerts[m];
   if (!info) return '';
   if (!info.has_data) {
     return '<div class="bestseller-note small">ไม่มีข้อมูลยอดขายย้อนหลังของรุ่นนี้ในสาขาที่ดูแล</div>';
   }
-  const items = info.bestsellers || [];
+  const rawItems = info.bestsellers || [];
+  const items = rawItems.map(it => {
+    const curStock = lookupCurStock(m, it.size, it.skin, it.color);
+    const monthsCover = it.monthly_rate > 0 ? Math.round((curStock / it.monthly_rate) * 10) / 10 : 0;
+    return Object.assign({}, it, { cur_stock: curStock, months_cover: monthsCover, low_stock: monthsCover < 3 });
+  });
   const lowStock = items.filter(it => it.low_stock);
-  if (items.length === 0) {
+  if (rawItems.length === 0) {
     return '<div class="bestseller-note small">มีข้อมูลยอดขายย้อนหลัง แต่ยังไม่มีสี/หนังไหนขายเกิน 5 ชิ้นใน 3 ปี</div>';
   }
   let h = '';
