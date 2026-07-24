@@ -208,7 +208,7 @@ function statusBadge(r) {
 function flagBadges(r) {
   let out = '';
   if (r.overdue) out += ' <span class="badge b-overdue">เลยกำหนด Plan</span>';
-  if (r.stale) out += ' <span class="badge b-stale">ค้าง ' + r.age_days + ' วัน ไม่มี ETA</span>';
+  if (r.stale) out += ' <span class="badge b-stale">ค้าง ' + r.age_days + ' วัน ไม่มีอัพเดท</span>';
   return out;
 }
 
@@ -232,7 +232,7 @@ function renderOverview() {
   html += kpi(done, 'เสร็จแล้ว', 'green');
   html += kpi(rejected, 'Reject', rejected ? 'warn' : '');
   html += kpi(overdue, 'เลยกำหนด Plan', overdue ? 'warn' : '');
-  html += kpi(stale, 'ค้างนาน ไม่มี ETA', stale ? 'warn' : '');
+  html += kpi(stale, 'ค้างนานไม่มีอัพเดทเกิน 14 วัน', stale ? 'warn' : '');
   html += '</div>';
 
   html += '<div class="card"><h2>รายการคำขอทั้งหมด</h2>';
