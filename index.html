@@ -526,6 +526,18 @@ function qualifiesOpen(r) {
   return true;
 }
 
+function skinColorMatch(needleSkin, needleColor, r) {
+  const norm = s => (s||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const nSkin = norm(needleSkin), nColor = norm(needleColor);
+  const skins = [r.skin1, r.skin2].map(norm).filter(Boolean);
+  const skinMatch = skins.some(s => s.indexOf(nSkin) !== -1 || nSkin.indexOf(s) !== -1);
+  const colorParts = norm(r.color).split(',').map(c => c.trim()).filter(Boolean);
+  const colorMatch = colorParts.some(c => c === nColor || c.indexOf(nColor) !== -1 || nColor.indexOf(c) !== -1);
+  return skinMatch && colorMatch;
+}
+function hasOpenRequestFor(model, size, skin, color) {
+  return DATA.requests.some(r => r.model === model && String(r.size||'').trim() === String(size||'').trim() && qualifiesOpen(r) && skinColorMatch(skin, color, r));
+}
 function bestsellerAlertBlock(m) {
   const info = DATA.bestseller_alerts && DATA.bestseller_alerts[m];
   if (!info) return '';
@@ -542,8 +554,9 @@ function bestsellerAlertBlock(m) {
     h += '<div class="bestseller-alert">';
     h += '<div class="bestseller-alert-title">&#9888; สต็อกสีขายดีใกล้หมด (คงคลัง &lt; 3 เดือน) &mdash; ควรแจ้งเบิกเพิ่ม</div>';
     lowStock.forEach(it => {
+      const already = hasOpenRequestFor(m, it.size, it.skin, it.color);
       h += '<div class="bestseller-row">' +
-        '<div class="bestseller-row-label">' + m + ' #' + it.size + ' ' + it.skin + ' / ' + it.color + '</div>' +
+        '<div class="bestseller-row-label">' + m + ' #' + it.size + ' ' + it.skin + ' / ' + it.color + (already ? ' <span class="badge b-process">มีคำขอค้างอยู่แล้ว</span>' : '') + '</div>' +
         '<div class="bestseller-row-value">เหลือ ' + it.cur_stock + ' ชิ้น (ขาย ' + it.hist_qty + ' ชิ้น/' + it.active_months + ' เดือนที่วางขาย = ' + it.monthly_rate + ' ชิ้น/เดือน) Stock คงเหลือ &asymp; ' + it.months_cover + ' เดือน</div>' +
         '</div>';
     });
