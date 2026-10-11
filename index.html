@@ -246,6 +246,9 @@ function renderOverview() {
     filterBtn('process','กำลังผลิต') + filterBtn('done','เสร็จแล้ว') +
     filterBtn('reject','Reject') +
     filterBtn('flag','มีปัญหา (เลยกำหนด/ค้างนาน)') + '</div>';
+  html += '<div class="filters" id="rangeFilters"><span class="small" style="align-self:center;margin-right:4px">แจ้งภายใน:</span>' +
+    [30,60,90,120].map(n=>'<button class="filter-btn' + (n===90?' active':'') + '" data-r="' + n + '">' + n + ' วัน</button>').join('') +
+    '<button class="filter-btn" data-r="all">ทั้งหมด</button></div>';
   html += '<input type="text" id="reqSearchBox" class="search-input" placeholder="ค้นหารุ่น หรือ ผู้แจ้ง...">';
   html += '<div class="status-legend">' +
     '<span class="legend-item"><span class="legend-dot" style="background:#a8e3bd"></span>เขียว = เสร็จแล้ว</span>' +
@@ -257,14 +260,19 @@ function renderOverview() {
   html += '<p class="small" style="margin-top:8px; line-height:1.7;">' +
     '<b>เร่งด่วน</b> = สถานะกำลังผลิต (ON PROCESS) ที่สต็อกคงเหลือของสี/หนังที่ขอเฉพาะเจาะจง เหลือน้อยกว่า 3 ชิ้น (หรือหมด)' +
     '</p>';
-  html += '<div id="reqTableWrap">' + reqTable(reqs) + '</div>';
+  html += '<p class="small" id="reqRangeInfo" style="margin:6px 0"></p>';
+  html += '<div id="reqTableWrap"></div>';
   html += '</div>';
 
   document.getElementById('overview').innerHTML = html;
 
   let currentStatusFilter = 'all';
+  let currentRange = 90;
   function applyFilters() {
     let filtered = reqs;
+    const inRange = r => currentRange === 'all' || (r.age_days||0) <= currentRange;
+    const beforeRange = filtered;
+    if (currentStatusFilter !== 'flag') filtered = filtered.filter(inRange);
     if (currentStatusFilter === 'new') filtered = filtered.filter(r=>isPlainStatus(r));
     else if (currentStatusFilter === 'process') filtered = filtered.filter(r=>r.effective_status.indexOf('ON PROCESS')===0);
     else if (currentStatusFilter === 'done') filtered = filtered.filter(r=>r.effective_status==='Done');
@@ -279,7 +287,24 @@ function renderOverview() {
       );
     }
     document.getElementById('reqTableWrap').innerHTML = reqTable(filtered);
+    const infoEl = document.getElementById('reqRangeInfo');
+    if (infoEl) {
+      let t = 'แสดง ' + filtered.length + ' รายการ' + (currentRange === 'all' ? ' (ทุกช่วงเวลา)' : ' ที่แจ้งภายใน ' + currentRange + ' วันล่าสุด');
+      if (currentRange !== 'all' && currentStatusFilter !== 'flag') {
+        const hiddenOpen = reqs.filter(r => !inRange(r) && r.effective_status !== 'Done' && r.effective_status !== 'Reject').length;
+        if (hiddenOpen) t += ' — ยังมีคำขอที่ยังไม่เสร็จแต่แจ้งเก่ากว่านั้นอีก ' + hiddenOpen + ' รายการ (กด "ทั้งหมด" เพื่อดู)';
+      }
+      infoEl.textContent = t;
+    }
   }
+  document.querySelectorAll('#rangeFilters .filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#rangeFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRange = btn.dataset.r === 'all' ? 'all' : parseInt(btn.dataset.r, 10);
+      applyFilters();
+    });
+  });
   document.querySelectorAll('#statusFilters .filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#statusFilters .filter-btn').forEach(b=>b.classList.remove('active'));
@@ -292,6 +317,7 @@ function renderOverview() {
   if (searchBoxEl) {
     searchBoxEl.addEventListener('input', applyFilters);
   }
+  applyFilters();
 }
 function kpi(num, label, cls) {
   return '<div class="kpi ' + (cls||'') + '"><div class="num">' + num + '</div><div class="label">' + label + '</div></div>';
